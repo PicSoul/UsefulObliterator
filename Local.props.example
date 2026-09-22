@@ -1,0 +1,19 @@
+<!--
+    Machine-specific build paths.
+    Copy this file to Local.props and adjust the paths for your machine.
+    Local.props is gitignored.
+-->
+<Project>
+  <PropertyGroup>
+    <!-- Path to your Valheim installation folder -->
+    <ValheimInstall>X:\SteamLibrary\steamapps\common\Valheim</ValheimInstall>
+
+    <!--
+        Path to the BepInEx\core folder containing BepInEx.dll and 0Harmony.dll.
+        For a Gale profile, this is typically under:
+        %APPDATA%\com.kesomannen.gale\valheim\profiles\<ProfileName>\BepInEx\core
+    -->
+    <BepInExCore>$(AppData)\com.kesomannen.gale\valheim\profiles\1.0 Release Client Mods\BepInEx\core</BepInExCore>
+  </PropertyGroup>
+</Project>
+

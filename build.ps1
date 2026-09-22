@@ -1,0 +1,191 @@
+<#
+    Build and optionally install UsefulObliterator for local testing.
+
+        .\build.ps1            build, validate and package
+        .\build.ps1 -Install   also copy into the local Gale profile
+        .\build.ps1 -Disable   stop BepInEx loading it, without deleting it
+        .\build.ps1 -Enable    load it again
+
+    Packaging targets Hexium / Thunderstore package format: a zip
+    with manifest.json, icon.png (exactly 256x256) and README.md at its root.
+#>
+
+[CmdletBinding()]
+param(
+    [switch]$Install,
+    [switch]$Disable,
+    [switch]$Enable,
+    [string]$Profile = "1.0 Release Client Mods"
+)
+
+$ErrorActionPreference = "Stop"
+$root = $PSScriptRoot
+
+function Fail($msg) { Write-Host "FAIL: $msg" -ForegroundColor Red; exit 1 }
+function Ok($msg)   { Write-Host "  ok   $msg" -ForegroundColor Green }
+
+function PluginRoot {
+    $path = "$env:APPDATA\com.kesomannen.gale\valheim\profiles\$Profile\BepInEx\plugins"
+    if (-not (Test-Path $path)) { Fail "profile not found: $path" }
+    return $path
+}
+
+function RequireValheimClosed {
+    if (Get-Process -Name "valheim" -ErrorAction SilentlyContinue) {
+        Fail "Valheim is running; close it first"
+    }
+}
+
+function SetLoaded([bool]$loaded) {
+    RequireValheimClosed
+    $dir = Join-Path (PluginRoot) "PICS0UL-UsefulObliterator"
+    if (-not (Test-Path $dir)) { Fail "not installed; run .\build.ps1 -Install first" }
+
+    $live = Join-Path $dir "UsefulObliterator.dll"
+    $off = "$live.old"
+
+    if ($loaded) {
+        if (Test-Path $live) { Ok "already enabled"; return }
+        if (-not (Test-Path $off)) { Fail "nothing to enable in $dir" }
+        Move-Item $off $live -Force
+        Ok "enabled - BepInEx will load it on next launch"
+        return
+    }
+
+    if (-not (Test-Path $live)) {
+        if (Test-Path $off) { Ok "already disabled"; return }
+        Fail "nothing to disable in $dir"
+    }
+
+    Move-Item $live $off -Force
+    Ok "disabled - the DLL is kept as $(Split-Path $off -Leaf)"
+}
+
+if ($Disable -and $Enable) { Fail "pick one of -Disable or -Enable" }
+
+if ($Disable) {
+    Write-Host "`ndisabling..." -ForegroundColor Cyan
+    SetLoaded $false
+    Write-Host "`ndone.`n" -ForegroundColor Cyan
+    exit 0
+}
+
+if ($Enable) {
+    Write-Host "`nenabling..." -ForegroundColor Cyan
+    SetLoaded $true
+    Write-Host "`ndone.`n" -ForegroundColor Cyan
+    exit 0
+}
+
+# ---------------------------------------------------------------- version sync
+$manifest = Get-Content "$root\manifest.json" -Raw | ConvertFrom-Json
+$csproj = [xml](Get-Content "$root\UsefulObliterator.csproj")
+$version = $csproj.Project.PropertyGroup.Version | Where-Object { $_ } | Select-Object -First 1
+
+Write-Host "`nUseful Obliterator $($manifest.version_number)" -ForegroundColor Cyan
+
+if ($version -ne $manifest.version_number) {
+    Fail "version mismatch: manifest.json says $($manifest.version_number), csproj says $version"
+}
+
+$pluginSource = Get-Content "$root\src\UsefulObliteratorPlugin.cs" -Raw
+if ($pluginSource -notmatch 'PluginVersion\s*=\s*"([^"]+)"') { Fail "could not find PluginVersion in UsefulObliteratorPlugin.cs" }
+if ($Matches[1] -ne $manifest.version_number) {
+    Fail "version mismatch: manifest.json says $($manifest.version_number), UsefulObliteratorPlugin.cs says $($Matches[1])"
+}
+Ok "version $($manifest.version_number) matches in manifest.json, csproj and UsefulObliteratorPlugin.cs"
+
+$changelog = Get-Content "$root\CHANGELOG.md" -Raw
+if ($changelog -notmatch [regex]::Escape("## $($manifest.version_number)")) {
+    Fail "CHANGELOG.md has no '## $($manifest.version_number)' section"
+}
+Ok "CHANGELOG.md documents this version"
+
+Write-Host "`nbuilding..." -ForegroundColor Cyan
+$log = & dotnet build "$root\UsefulObliterator.csproj" -c Release -v minimal --nologo 2>&1
+if ($LASTEXITCODE -ne 0) { $log; Fail "build failed" }
+Ok "compiled"
+
+$dll = "$root\bin\Release\UsefulObliterator.dll"
+if (-not (Test-Path $dll)) { Fail "expected output missing: $dll" }
+
+# --------------------------------------------------------------------- stage
+$stage = "$root\package"
+if (Test-Path $stage) { Remove-Item $stage -Recurse -Force }
+New-Item -ItemType Directory -Path $stage | Out-Null
+
+Copy-Item $dll $stage
+foreach ($f in @("manifest.json", "icon.png", "README.md", "CHANGELOG.md", "LICENSE")) {
+    if (Test-Path "$root\$f") { Copy-Item "$root\$f" $stage }
+}
+if (Test-Path "$root\icons") {
+    Copy-Item "$root\icons" $stage -Recurse
+    Ok "staged $( (Get-ChildItem "$root\icons" -File).Count ) high-res custom icons"
+}
+
+# ------------------------------------------------------------------ validate
+Write-Host "`nvalidating against package rules..." -ForegroundColor Cyan
+
+foreach ($required in @("manifest.json", "icon.png", "README.md")) {
+    if (-not (Test-Path "$stage\$required")) { Fail "$required missing from package root" }
+}
+Ok "manifest.json, icon.png, README.md present at package root"
+
+if ($manifest.name -notmatch '^[a-zA-Z0-9_]+$') { Fail "name '$($manifest.name)' has illegal characters (allowed: a-z A-Z 0-9 _)" }
+if ($manifest.name.Length -gt 128)              { Fail "name exceeds 128 characters" }
+Ok "name '$($manifest.name)' is valid"
+
+if ($manifest.version_number -notmatch '^\d+\.\d+\.\d+$') { Fail "version_number must be Major.Minor.Patch" }
+Ok "version_number is valid semver"
+
+if ($manifest.description.Length -gt 250) { Fail "description is $($manifest.description.Length) chars (max 250)" }
+Ok "description is $($manifest.description.Length)/250 chars"
+
+if ($null -eq $manifest.website_url) { Fail "website_url must be present (use an empty string if unused)" }
+Ok "website_url present"
+
+foreach ($dep in $manifest.dependencies) {
+    if ($dep -notmatch '^[a-zA-Z0-9_]+-[a-zA-Z0-9_]+-\d+\.\d+\.\d+$') {
+        Fail "dependency '$dep' is not in {team}-{package}-{major.minor.patch} form"
+    }
+}
+Ok "$($manifest.dependencies.Count) dependency string(s) well-formed"
+
+Add-Type -AssemblyName System.Drawing
+$img = [System.Drawing.Image]::FromFile("$stage\icon.png")
+$w = $img.Width; $h = $img.Height
+$img.Dispose()
+if ($w -ne 256 -or $h -ne 256) { Fail "icon.png is ${w}x${h}, must be exactly 256x256" }
+Ok "icon.png is 256x256"
+
+try { [System.Text.Encoding]::UTF8.GetString([System.IO.File]::ReadAllBytes("$stage\README.md")) | Out-Null }
+catch { Fail "README.md is not valid UTF-8" }
+Ok "README.md is UTF-8"
+
+# ---------------------------------------------------------------------- zip
+$zip = "$root\$($manifest.name)-$($manifest.version_number).zip"
+if (Test-Path $zip) { Remove-Item $zip -Force }
+Compress-Archive -Path "$stage\*" -DestinationPath $zip
+Ok "packaged $(Split-Path $zip -Leaf) ($([math]::Round((Get-Item $zip).Length / 1KB, 1)) KB)"
+
+if (-not $Install) { Write-Host "`ndone.`n" -ForegroundColor Cyan; exit 0 }
+
+Write-Host "`ninstalling to profile '$Profile'..." -ForegroundColor Cyan
+
+RequireValheimClosed
+$pluginRoot = PluginRoot
+
+$target = Join-Path $pluginRoot "PICS0UL-UsefulObliterator"
+if (-not (Test-Path $target)) { New-Item -ItemType Directory -Path $target | Out-Null }
+Copy-Item $dll $target -Force
+Remove-Item (Join-Path $target "UsefulObliterator.dll.old") -Force -ErrorAction SilentlyContinue
+if (Test-Path "$root\icons") {
+    $targetIcons = Join-Path $target "icons"
+    if (-not (Test-Path $targetIcons)) { New-Item -ItemType Directory -Path $targetIcons | Out-Null }
+    Copy-Item "$root\icons\*" $targetIcons -Force
+    Ok "installed high-res custom icons to $(Split-Path $target -Leaf)\icons"
+}
+Ok "installed to $(Split-Path $target -Leaf)"
+
+Write-Host "`ndone.`n" -ForegroundColor Cyan
+

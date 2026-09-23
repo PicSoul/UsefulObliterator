@@ -10,7 +10,7 @@ namespace UsefulObliterator
     {
         public const string PluginGuid = "com.pics0ul.valheim.usefulobliterator";
         public const string PluginName = "Useful Obliterator";
-        public const string PluginVersion = "0.1.1";
+        public const string PluginVersion = "0.1.2";
 
         internal static ManualLogSource Log;
         private Harmony _harmony;

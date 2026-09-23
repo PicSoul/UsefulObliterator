@@ -1,6 +1,13 @@
-# Changelog
+﻿# Changelog
 
 All notable changes to **Useful Obliterator** will be documented in this file.
+
+## 0.1.2
+
+- The slot panel no longer fills the log with font warnings. Every label was created as an active
+  object, so TextMeshPro woke up, found no font, and reached for one the game does not ship - a
+  warning each time, nineteen per panel. The real font was assigned a line later, so the text was
+  always correct and only the log suffered. Labels are now built with their font already in place.
 
 ## 0.1.1
 

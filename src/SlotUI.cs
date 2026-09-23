@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using HarmonyLib;
@@ -145,7 +145,7 @@ namespace UsefulObliterator
             _panelRect.sizeDelta = new Vector2(880f, 345f);
 
             // Floating Large Yellow Payout Text Banner (Floats directly above the top of the cabinet panel)
-            GameObject topPayoutObj = new GameObject("TopPayoutBanner", typeof(RectTransform), typeof(TextMeshProUGUI), typeof(Outline));
+            GameObject topPayoutObj = TextObject("TopPayoutBanner", font, typeof(Outline));
             topPayoutObj.transform.SetParent(panel.transform, false);
             RectTransform tpRect = topPayoutObj.GetComponent<RectTransform>();
             tpRect.anchorMin = new Vector2(0.5f, 1f);
@@ -224,7 +224,7 @@ namespace UsefulObliterator
             CreateHeaderSideBadge(headerObj.transform, 380f, font);
 
             // Title
-            GameObject titleObj = new GameObject("Title", typeof(RectTransform), typeof(TextMeshProUGUI));
+            GameObject titleObj = TextObject("Title", font);
             titleObj.transform.SetParent(headerObj.transform, false);
             RectTransform titleRect = titleObj.GetComponent<RectTransform>();
             titleRect.anchorMin = new Vector2(0.1f, 0.44f);
@@ -250,7 +250,7 @@ namespace UsefulObliterator
             divImg.color = new Color(0.68f, 0.52f, 0.30f, 0.75f);
 
             // Subtitle
-            GameObject subObj = new GameObject("Subtitle", typeof(RectTransform), typeof(TextMeshProUGUI));
+            GameObject subObj = TextObject("Subtitle", font);
             subObj.transform.SetParent(headerObj.transform, false);
             RectTransform subRect = subObj.GetComponent<RectTransform>();
             subRect.anchorMin = new Vector2(0.1f, 0.06f);
@@ -277,7 +277,7 @@ namespace UsefulObliterator
             // -------------------------------------------------------------
             // SECTION 3: FOOTER (Status Banner & Salvage Ledger)
             // -------------------------------------------------------------
-            GameObject statusObj = new GameObject("Status", typeof(RectTransform), typeof(TextMeshProUGUI));
+            GameObject statusObj = TextObject("Status", font);
             statusObj.transform.SetParent(panel.transform, false);
             RectTransform statusRect = statusObj.GetComponent<RectTransform>();
             statusRect.anchorMin = new Vector2(0f, 0.14f);
@@ -293,7 +293,7 @@ namespace UsefulObliterator
             _statusText.alignment = TextAlignmentOptions.Center;
             _statusText.color = new Color(0.85f, 0.85f, 0.85f);
 
-            GameObject summaryObj = new GameObject("Summary", typeof(RectTransform), typeof(TextMeshProUGUI));
+            GameObject summaryObj = TextObject("Summary", font);
             summaryObj.transform.SetParent(panel.transform, false);
             RectTransform summaryRect = summaryObj.GetComponent<RectTransform>();
             summaryRect.anchorMin = new Vector2(0f, 0.04f);
@@ -332,7 +332,7 @@ namespace UsefulObliterator
             promptBtn.onClick.AddListener(TriggerRespin);
 
             // Text inside prompt banner
-            GameObject promptTextObj = new GameObject("PromptText", typeof(RectTransform), typeof(TextMeshProUGUI));
+            GameObject promptTextObj = TextObject("PromptText", font);
             promptTextObj.transform.SetParent(_respinPromptBanner.transform, false);
             RectTransform ptTextRect = promptTextObj.GetComponent<RectTransform>();
             ptTextRect.anchorMin = Vector2.zero;
@@ -370,7 +370,7 @@ namespace UsefulObliterator
             ptOutline.effectDistance = new Vector2(2f, -2f);
 
             // Paytable Header Label
-            GameObject ptHeader = new GameObject("Header", typeof(RectTransform), typeof(TextMeshProUGUI));
+            GameObject ptHeader = TextObject("Header", font);
             ptHeader.transform.SetParent(paytableObj.transform, false);
             RectTransform pthRect = ptHeader.GetComponent<RectTransform>();
             pthRect.anchorMin = new Vector2(0f, 1f);
@@ -451,7 +451,7 @@ namespace UsefulObliterator
             rowHighlight.enabled = false;
 
             // Left Label
-            GameObject leftObj = new GameObject("LeftLabel", typeof(RectTransform), typeof(TextMeshProUGUI));
+            GameObject leftObj = TextObject("LeftLabel", font);
             leftObj.transform.SetParent(rowObj.transform, false);
             RectTransform leftRect = leftObj.GetComponent<RectTransform>();
             leftRect.anchorMin = new Vector2(0f, 0f);
@@ -465,7 +465,7 @@ namespace UsefulObliterator
             leftText.alignment = TextAlignmentOptions.Left;
 
             // Right Label
-            GameObject rightObj = new GameObject("RightLabel", typeof(RectTransform), typeof(TextMeshProUGUI));
+            GameObject rightObj = TextObject("RightLabel", font);
             rightObj.transform.SetParent(rowObj.transform, false);
             RectTransform rightRect = rightObj.GetComponent<RectTransform>();
             rightRect.anchorMin = new Vector2(0.55f, 0f);
@@ -651,7 +651,7 @@ namespace UsefulObliterator
             o.effectColor = new Color(0.72f, 0.55f, 0.32f, 0.95f);
             o.effectDistance = new Vector2(1.5f, -1.5f);
 
-            GameObject diamond = new GameObject("DiamondGlyph", typeof(RectTransform), typeof(TextMeshProUGUI));
+            GameObject diamond = TextObject("DiamondGlyph", font);
             diamond.transform.SetParent(badge.transform, false);
             RectTransform dt = diamond.GetComponent<RectTransform>();
             dt.anchorMin = Vector2.zero;
@@ -1123,5 +1123,47 @@ namespace UsefulObliterator
                 Destroy(_whitePixel);
             }
         }
+
+        /// <summary>
+        /// A text object built inactive, so TextMeshPro has its font before it wakes.
+        /// </summary>
+        /// <remarks>
+        /// new GameObject(name, typeof(TextMeshProUGUI)) hands back an ACTIVE object, so TMP's
+        /// Awake runs there and then - before the next line can hand it Valheim's font. Finding
+        /// none, it reaches for TMP_Settings.defaultFontAsset, which is LiberationSans SDF and is
+        /// not shipped with the game, and logs a warning for every label built.
+        ///
+        /// The text itself was always right, because the real font is assigned a line later. Only
+        /// the log suffered, and it suffered a lot: two dozen warnings per panel, which is enough
+        /// noise to hide something that matters.
+        ///
+        /// A GameObject that is inactive when a component is added does not run that component's
+        /// Awake until it is activated, so building it inactive puts the font in place before TMP
+        /// ever goes looking for one.
+        /// </remarks>
+        private static GameObject TextObject(string name, TMP_FontAsset font, params Type[] extra)
+        {
+            GameObject obj = new GameObject(name);
+            obj.SetActive(false);
+
+            obj.AddComponent<RectTransform>();
+            TextMeshProUGUI text = obj.AddComponent<TextMeshProUGUI>();
+
+            // Added after the text, and in the order they were given, so anything needing a
+            // Graphic to sit on still finds one.
+            foreach (Type component in extra)
+            {
+                obj.AddComponent(component);
+            }
+
+            if (font != null)
+            {
+                text.font = font;
+            }
+
+            obj.SetActive(true);
+            return obj;
+        }
+
     }
 }

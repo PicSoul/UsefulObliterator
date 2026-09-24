@@ -1,10 +1,14 @@
-<#
+﻿<#
     Build and optionally install UsefulObliterator for local testing.
 
-        .\build.ps1            build, validate and package
-        .\build.ps1 -Install   also copy into the local Gale profile
-        .\build.ps1 -Disable   stop BepInEx loading it, without deleting it
-        .\build.ps1 -Enable    load it again
+        .\build.ps1              build, validate and package
+        .\build.ps1 -Install     also install a development copy into the Gale client profile
+        .\build.ps1 -RemoveDev   take the development copy out again
+
+    Testing a change: switch the released mod off in Gale, run -Install, play. When the new
+    version is published, run -RemoveDev and switch the released mod back on in Gale.
+    The development copy lives in its own folder, PicSoul-UsefulObliterator-DEV, and never
+    touches the folder Gale manages - see devcopy.ps1 for why that matters.
 
     Packaging targets Hexium / Thunderstore package format: a zip
     with manifest.json, icon.png (exactly 256x256) and README.md at its root.
@@ -13,8 +17,7 @@
 [CmdletBinding()]
 param(
     [switch]$Install,
-    [switch]$Disable,
-    [switch]$Enable,
+    [switch]$RemoveDev,
     [string]$Profile = "1.0 Release Client Mods"
 )
 
@@ -36,43 +39,12 @@ function RequireValheimClosed {
     }
 }
 
-function SetLoaded([bool]$loaded) {
-    RequireValheimClosed
-    $dir = Join-Path (PluginRoot) "PICS0UL-UsefulObliterator"
-    if (-not (Test-Path $dir)) { Fail "not installed; run .\build.ps1 -Install first" }
+. "$root\devcopy.ps1"
+$devFolder = "PicSoul-UsefulObliterator-DEV"
+$devDll = "UsefulObliterator.dll"
 
-    $live = Join-Path $dir "UsefulObliterator.dll"
-    $off = "$live.old"
-
-    if ($loaded) {
-        if (Test-Path $live) { Ok "already enabled"; return }
-        if (-not (Test-Path $off)) { Fail "nothing to enable in $dir" }
-        Move-Item $off $live -Force
-        Ok "enabled - BepInEx will load it on next launch"
-        return
-    }
-
-    if (-not (Test-Path $live)) {
-        if (Test-Path $off) { Ok "already disabled"; return }
-        Fail "nothing to disable in $dir"
-    }
-
-    Move-Item $live $off -Force
-    Ok "disabled - the DLL is kept as $(Split-Path $off -Leaf)"
-}
-
-if ($Disable -and $Enable) { Fail "pick one of -Disable or -Enable" }
-
-if ($Disable) {
-    Write-Host "`ndisabling..." -ForegroundColor Cyan
-    SetLoaded $false
-    Write-Host "`ndone.`n" -ForegroundColor Cyan
-    exit 0
-}
-
-if ($Enable) {
-    Write-Host "`nenabling..." -ForegroundColor Cyan
-    SetLoaded $true
+if ($RemoveDev) {
+    Remove-DevCopy -ProfileName $Profile -FolderName $devFolder -DllName $devDll
     Write-Host "`ndone.`n" -ForegroundColor Cyan
     exit 0
 }
@@ -170,22 +142,9 @@ Ok "packaged $(Split-Path $zip -Leaf) ($([math]::Round((Get-Item $zip).Length / 
 
 if (-not $Install) { Write-Host "`ndone.`n" -ForegroundColor Cyan; exit 0 }
 
-Write-Host "`ninstalling to profile '$Profile'..." -ForegroundColor Cyan
-
-RequireValheimClosed
-$pluginRoot = PluginRoot
-
-$target = Join-Path $pluginRoot "PICS0UL-UsefulObliterator"
-if (-not (Test-Path $target)) { New-Item -ItemType Directory -Path $target | Out-Null }
-Copy-Item $dll $target -Force
-Remove-Item (Join-Path $target "UsefulObliterator.dll.old") -Force -ErrorAction SilentlyContinue
-if (Test-Path "$root\icons") {
-    $targetIcons = Join-Path $target "icons"
-    if (-not (Test-Path $targetIcons)) { New-Item -ItemType Directory -Path $targetIcons | Out-Null }
-    Copy-Item "$root\icons\*" $targetIcons -Force
-    Ok "installed high-res custom icons to $(Split-Path $target -Leaf)\icons"
-}
-Ok "installed to $(Split-Path $target -Leaf)"
+# The high-resolution icons are staged beside the DLL, so installing the stage brings them along,
+# laid out exactly as a package install lays them out.
+Install-DevCopy -ProfileName $Profile -FolderName $devFolder -DllName $devDll `
+    -Stage $stage -Version $manifest.version_number
 
 Write-Host "`ndone.`n" -ForegroundColor Cyan
-

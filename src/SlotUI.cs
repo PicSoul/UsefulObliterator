@@ -70,6 +70,9 @@ namespace UsefulObliterator
         private Coroutine _activeSpinCoroutine;
         private Texture2D _whitePixel;
 
+        private ContentsStrip _contents;
+        private float _contentsTimer;
+
         public static void EnsureCreated()
         {
             if (Instance != null) return;
@@ -347,6 +350,9 @@ namespace UsefulObliterator
             _respinPromptText.text = "";
 
             _respinPromptBanner.SetActive(false);
+
+            // What is inside the Obliterator, beneath the cabinet; the re-spin banner sits under it.
+            _contents = new ContentsStrip(panel.transform, font);
         }
 
         private void BuildPaytableSection(Transform parent, TMP_FontAsset font)
@@ -713,6 +719,10 @@ namespace UsefulObliterator
             _respinTriggered = false;
             if (_respinPromptBanner != null) _respinPromptBanner.SetActive(false);
 
+            // What goes in now is what the spin's wins and losses are counted against.
+            _contents?.Snapshot(incinerator != null && incinerator.m_container != null ? incinerator.m_container.GetInventory() : null);
+            _contentsTimer = 0f;
+
             _activeSpinCoroutine = StartCoroutine(SpinRoutine(outcome));
         }
 
@@ -927,6 +937,8 @@ namespace UsefulObliterator
 
         private void Update()
         {
+            RefreshContents();
+
             if (!_canRespin || !_isPuller || _currentIncinerator == null || Player.m_localPlayer == null)
             {
                 return;
@@ -948,6 +960,42 @@ namespace UsefulObliterator
             if (ZInput.GetButtonDown("Use") || ZInput.GetButtonDown("JoyUse"))
             {
                 TriggerRespin();
+            }
+        }
+
+        /// <summary>
+        /// Keeps the contents strip in step with the Obliterator while the machine is on screen,
+        /// and the re-spin banner below it.
+        /// </summary>
+        private void RefreshContents()
+        {
+            if (_contents == null)
+            {
+                return;
+            }
+
+            bool showing = ModConfig.ShowObliteratorContents != null && ModConfig.ShowObliteratorContents.Value
+                && _currentIncinerator != null && _currentIncinerator.m_container != null
+                && _canvasGroup != null && _canvasGroup.alpha > 0f;
+
+            if (!showing)
+            {
+                _contents.Hide();
+            }
+            else
+            {
+                _contentsTimer -= Time.deltaTime;
+                if (_contentsTimer <= 0f)
+                {
+                    _contentsTimer = 0.2f;
+                    _contents.Refresh(_currentIncinerator.m_container.GetInventory());
+                }
+            }
+
+            if (_respinPromptBanner != null)
+            {
+                float below = _contents.Height > 0f ? _contents.Height + 8f : 0f;
+                ((RectTransform)_respinPromptBanner.transform).anchoredPosition = new Vector2(0f, -8f - below);
             }
         }
 
@@ -1000,6 +1048,7 @@ namespace UsefulObliterator
             else
             {
                 long playerID = Game.instance.GetPlayerProfile().GetPlayerID();
+                IdolCatalog.SendKnownBiomes(_currentIncinerator);
                 _currentIncinerator.GetComponent<ZNetView>()?.InvokeRPC("RPC_RequestIncinerate", playerID);
             }
         }
@@ -1141,7 +1190,7 @@ namespace UsefulObliterator
         /// Awake until it is activated, so building it inactive puts the font in place before TMP
         /// ever goes looking for one.
         /// </remarks>
-        private static GameObject TextObject(string name, TMP_FontAsset font, params Type[] extra)
+        internal static GameObject TextObject(string name, TMP_FontAsset font, params Type[] extra)
         {
             GameObject obj = new GameObject(name);
             obj.SetActive(false);

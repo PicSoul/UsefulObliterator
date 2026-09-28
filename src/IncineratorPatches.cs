@@ -41,6 +41,13 @@ namespace UsefulObliterator
                 {
                     RPC_ShowSummary(summary);
                 });
+
+            // Which biomes the player about to spin has discovered, for the Boss Jackpot's idol.
+            nview.Register<long, int>(IdolCatalog.BiomesRpc,
+                (long sender, long playerID, int biomes) =>
+                {
+                    IdolCatalog.Remember(playerID, biomes);
+                });
         }
 
         [HarmonyPatch(typeof(Incinerator), "GetLeverHoverText")]
@@ -101,6 +108,13 @@ namespace UsefulObliterator
                     return false;
                 }
             }
+
+            // Sent before the game's own spin request, so it reaches the Obliterator's owner first.
+            if (user == Player.m_localPlayer)
+            {
+                IdolCatalog.SendKnownBiomes(__instance);
+            }
+
             return true;
         }
 
@@ -216,7 +230,7 @@ namespace UsefulObliterator
 
                 // Execute recycling
                 RecycleEngine.RecycleResult result = RecycleEngine.ProcessInventory(
-                    incinerator.m_container, outcome, incinerator.transform.position);
+                    incinerator.m_container, outcome, incinerator.transform.position, playerID);
 
                 // Send custom salvage summary message to the pulling player
                 UsefulObliteratorPlugin.Log.LogInfo($"[UsefulObliterator] Finished recycling. Summary: {result.SummaryText}");

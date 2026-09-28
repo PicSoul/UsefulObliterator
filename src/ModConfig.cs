@@ -22,6 +22,8 @@ namespace UsefulObliterator
         public static ConfigEntry<bool> OnlyAllowCraftedItems;
         public static ConfigEntry<bool> ConsolationCoal;
         public static ConfigEntry<bool> JackpotBonusLoot;
+        public static ConfigEntry<bool> JackpotIdol;
+        public static ConfigEntry<bool> ShowObliteratorContents;
         public static ConfigEntry<string> RawItemsBehavior;
 
         // Client Display & Audio (Client-side)
@@ -89,7 +91,14 @@ namespace UsefulObliterator
                 new ConfigDescription("Whether to grant consolation Coal for lost materials on non-jackpot rolls.")));
 
             JackpotBonusLoot = Synced(config.Bind("3 - Mechanics", "JackpotBonusLoot", true,
-                new ConfigDescription("Whether a Boss Jackpot drops bonus treasure (Coins, Amber, Ruby, or Thunderstone).")));
+                new ConfigDescription("Whether a Boss Jackpot adds bonus treasure: 75-150 Coins, plus one or two of Ruby, Amber Pearl, Silver Necklace or Amber.")));
+
+            JackpotIdol = Synced(config.Bind("3 - Mechanics", "JackpotIdol", true,
+                new ConfigDescription("Whether a Boss Jackpot also brings one idol for the Forge of Potential - chosen at random "
+                    + "from the idols of biomes the player who pulled the lever has already discovered, so no idol spoils a "
+                    + "biome they have not reached. Wooden idols belong to the Meadows, Bronze to the Black Forest, Iron to "
+                    + "the Swamp, Silver to the Mountain, Black Metal to the Plains, Black Marble to the Mistlands, Flametal "
+                    + "to the Ashlands and Bloodgold to the Deep North.")));
 
             RawItemsBehavior = Synced(config.Bind("3 - Mechanics", "RawItemsBehavior", "Coal",
                 new ConfigDescription("How items without crafting recipes (wood, stone, meat, dandelions) are treated: 'Coal' (standard conversion scaled by roll) or 'Refund' (return the items).",
@@ -105,6 +114,10 @@ namespace UsefulObliterator
             SlotDisplayDistance = config.Bind("4 - Interface", "SlotDisplayDistance", 5.0f,
                 new ConfigDescription("Maximum distance (in meters) from the Obliterator for nearby players to see the slot reels spin and hear mechanical audio effects.",
                     new AcceptableValueRange<float>(1.0f, 50.0f)));
+
+            ShowObliteratorContents = config.Bind("4 - Interface", "ShowObliteratorContents", true,
+                new ConfigDescription("Show what is inside the Obliterator beneath the slot machine while it spins, updated as "
+                    + "the result lands: what was won in green, what was lost in red."));
 
             ResultDisplayDuration = config.Bind("4 - Interface", "ResultDisplayDuration", 3.0f,
                 new ConfigDescription("How long (in seconds) the slot machine results and payout banner remain visible on screen after the spin completes before fading out.",

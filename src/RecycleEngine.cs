@@ -14,7 +14,8 @@ namespace UsefulObliterator
             public string SummaryText = "";
         }
 
-        public static RecycleResult ProcessInventory(Container container, RollOutcome outcome, Vector3 obliteratorPosition)
+        /// <param name="playerID">Who pulled the lever - the Boss Jackpot's idol is picked from the biomes they have found.</param>
+        public static RecycleResult ProcessInventory(Container container, RollOutcome outcome, Vector3 obliteratorPosition, long playerID = 0L)
         {
             RecycleResult result = new RecycleResult();
             if (container == null || container.GetInventory() == null || ObjectDB.instance == null) return result;
@@ -261,6 +262,20 @@ namespace UsefulObliterator
             {
                 UsefulObliteratorPlugin.Log.LogInfo("[RecycleEngine] Awarding Boss Jackpot bonus treasure loot!");
                 AddBonusLoot(payoutItems, result);
+            }
+
+            // A Boss Jackpot also brings an idol for the Forge of Potential - one from a biome the
+            // player who pulled the lever has already found, so it gives nothing away.
+            if (outcome.Outcome == OutcomeType.BossJackpot && ModConfig.JackpotIdol.Value)
+            {
+                GameObject idol = IdolCatalog.PickFor(playerID);
+                if (idol != null)
+                {
+                    payoutItems[idol] = (payoutItems.TryGetValue(idol, out int had) ? had : 0) + 1;
+                    string locName = Localization.instance.Localize(idol.GetComponent<ItemDrop>().m_itemData.m_shared.m_name);
+                    result.ItemsSalvaged[locName] = (result.ItemsSalvaged.ContainsKey(locName) ? result.ItemsSalvaged[locName] : 0) + 1;
+                    UsefulObliteratorPlugin.Log.LogInfo($"[RecycleEngine] Boss Jackpot idol: {idol.name}");
+                }
             }
 
             // Clear original items

@@ -2,6 +2,24 @@
 
 All notable changes to **Useful Obliterator** will be documented in this file.
 
+## 0.2.0
+
+- A Boss Jackpot now also brings an idol for the Forge of Potential. It is picked at random from
+  the idols of biomes the player who pulled the lever has already discovered - Wooden for the
+  Meadows up to Bloodgold for the Deep North - so a jackpot never hands out a spoiler. The idols
+  are read from the forge's own recipes, so ones added by other mods count too. The spin is
+  worked out wherever the Obliterator runs, usually the server, which cannot see a player's
+  discovered biomes, so each player's game sends them just before its spin. New server setting
+  `JackpotIdol`, on by default.
+- The slot machine now shows what is inside the Obliterator, in a strip beneath the cabinet. It
+  is counted when the spin starts and updates as the payout lands: a green +N for what was won,
+  a red -N for what was lost, and anything taken completely stays on the strip, faded. Nearby
+  players watching the spin see it too. The spin-again banner moves below it. New client
+  setting `ShowObliteratorContents`, on by default.
+- The README had fallen behind the mod - it still described three reels and the old payout
+  rates. It now covers the four reels, 4 of a Kind, the current defaults, every setting, and what
+  a Boss Jackpot actually pays out.
+
 ## 0.1.2
 
 - The slot panel no longer fills the log with font warnings. Every label was created as an active

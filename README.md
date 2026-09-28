@@ -2,7 +2,7 @@
 
 **Turn the Valheim Obliterator into an authentic Norse slot machine with recipe-aware recycling payouts.**
 
-In vanilla Valheim, the Obliterator turns everything into Coal. Other recycling mods often reduce the game to an instant, sterile button click. **Useful Obliterator** makes recycling an exciting gamble: drop your obsolete armor, weapons, or spare gear into the Obliterator, pull the lever, and watch three creature-head reels spin during Thor's lightning wind-up!
+In vanilla Valheim, the Obliterator turns everything into Coal. Other recycling mods often reduce the game to an instant, sterile button click. **Useful Obliterator** makes recycling an exciting gamble: drop your obsolete armor, weapons, or spare gear into the Obliterator, pull the lever, and watch four creature-head reels spin during Thor's lightning wind-up!
 
 ---
 
@@ -10,8 +10,11 @@ In vanilla Valheim, the Obliterator turns everything into Coal. Other recycling 
 
 1. **Load Up**: Place any crafted items, gear, weapons, or materials into the Obliterator's chest.
 2. **Pull the Lever**: When you pull the handle, the slot reels appear on your screen and begin spinning with authentic clinking sounds.
-3. **The Roll**: Three creature heads (Boar, Troll, Wolf, Eikthyr, and more) clink to a stop one by one over ~5 seconds.
+3. **The Roll**: Four creature heads (Boar, Troll, Wolf, Eikthyr, and more) clink to a stop one by one over ~5 seconds.
 4. **Thor Strikes**: Thor's lightning bolt crashes down on the Obliterator, resolving the payout into the chest and displaying a summary of your salvaged materials.
+5. **Spin Again?**: If anything is left in the chest, press your Use key while the result is showing to spin again - or walk away with your loot.
+
+While the machine is on screen, a strip beneath it shows **what is inside the Obliterator**. When the payout lands it updates on the spot: what you won is marked with a green **+N**, what you lost with a red **-N**, and anything the spin took completely stays on the strip, faded, so you can see what went. Nearby players watching the spin see it too.
 
 ---
 
@@ -19,12 +22,33 @@ In vanilla Valheim, the Obliterator turns everything into Coal. Other recycling 
 
 | Roll Result | Example | Default Refund Rate | Notes |
 | :--- | :--- | :---: | :--- |
-| **Bust** | Boar • Troll • Skeleton | **25%** | No matching heads. Returns a quarter of all crafting ingredients + consolation Coal for what was lost. |
-| **Pair** | Wolf • Wolf • Greydwarf | **60%** | Two matching heads. Recovers over half of all original crafting materials. |
-| **Triple Match** | Troll • Troll • Troll | **100%** | Three identical creature heads. Full 100% refund of all crafting materials and upgrade costs! |
-| **Boss Jackpot** | Eikthyr • Eikthyr • Eikthyr | **125%** | Three matching Boss heads. Over-refunds materials (125%) and drops bonus treasure (Coins, Amber, Thunderstone). |
+| **Bust** | Boar • Troll • Skeleton • Wolf | **25%** | No matching heads. Returns a quarter of all crafting ingredients + consolation Coal for what was lost. |
+| **Pair** | Wolf • Wolf • Greydwarf • Boar | **50%** | Two matching heads. Recovers half of all original crafting materials. |
+| **Triple Match** | Troll • Troll • Troll • Boar | **100%** | Three matching heads. Full refund of all crafting materials and upgrade costs! |
+| **4 of a Kind** | Wolf • Wolf • Wolf • Wolf | **150%** | Four matching creature heads. Over-refunds materials. |
+| **Boss Jackpot** | Eikthyr • Eikthyr • Eikthyr • Eikthyr | **250%** | Four matching Boss heads. Over-refunds materials and adds bonus treasure and a Forge of Potential idol (see below). |
 
 *All payout percentages, odds, and consolation rewards are fully customizable in the config file.*
+
+### Boss Jackpot rewards
+
+On top of the 250% refund, a Boss Jackpot brings:
+
+- **Treasure**: 75-150 Coins, plus one or two of Ruby, Amber Pearl, Silver Necklace or Amber.
+- **An idol for the Forge of Potential**: one idol at random - Battle or Protection - from the biomes **the player who pulled the lever has already discovered**. Nobody is handed a Deep North idol before they have set foot in the Deep North, so the jackpot never spoils what is ahead.
+
+| Idol | Found once you have discovered |
+| :--- | :--- |
+| Wooden | Meadows |
+| Bronze | Black Forest |
+| Iron | Swamp |
+| Silver | Mountain |
+| Black Metal | Plains |
+| Black Marble | Mistlands |
+| Flametal | Ashlands |
+| Bloodgold | Deep North |
+
+The idols are read from the Forge of Potential's own recipes, so any idol another mod adds the same way is included too.
 
 ---
 
@@ -38,18 +62,36 @@ In vanilla Valheim, the Obliterator turns everything into Coal. Other recycling 
 
 ## Configuration
 
-The config file is created at `BepInEx/config/com.pics0ul.valheim.usefulobliterator.cfg`. When running on a dedicated server, settings sync automatically to all connected clients.
+The config file is created at `BepInEx/config/com.pics0ul.valheim.usefulobliterator.cfg`. When running on a dedicated server, settings in sections 1-3 sync automatically to all connected clients.
 
-- `WinRatePercent`: Base chance (0-100%) to win a Pair, Triple, or Boss Jackpot (default: `60.0`). Higher rates increase Triples and eliminate Busts; at 100%, Boss Jackpots have up to a 25% chance.
+**Payouts**
+- `WinRatePercent`: Base chance (0-100%) to win a Pair, Triple, 4 of a Kind or Boss Jackpot (default: `40.0`). At 100%, losses never occur.
 - `BustPayoutPercent`: Percent refund on no matches (default: `25.0`)
-- `PairPayoutPercent`: Percent refund on a pair (default: `60.0`)
+- `PairPayoutPercent`: Percent refund on a pair (default: `50.0`)
 - `TriplePayoutPercent`: Percent refund on a triple match (default: `100.0`)
-- `BossJackpotPayoutPercent`: Percent refund on three boss heads (default: `125.0`)
-- `OnlyAllowCraftedItems`: Block spinning raw materials (wood, stone, coal) and force only crafted items (default: `true`)
+- `QuadPayoutPercent`: Percent refund on four matching creature heads (default: `150.0`)
+- `BossJackpotPayoutPercent`: Percent refund on four boss heads (default: `250.0`)
+
+**Mechanics**
+- `AllowGambleMaterials`: Allow raw materials to be gambled - winning rolls grant more, losing rolls take some (default: `true`)
+- `OnlyAllowCraftedItems`: Require at least one crafted item in the chest to spin (default: `false`)
 - `ConsolationCoal`: Give coal for lost ingredients (default: `true`)
-- `JackpotBonusLoot`: Drop bonus treasure on a Boss Jackpot (default: `true`)
+- `JackpotBonusLoot`: Add bonus treasure on a Boss Jackpot (default: `true`)
+- `JackpotIdol`: Add a Forge of Potential idol from the puller's discovered biomes on a Boss Jackpot (default: `true`)
+- `RawItemsBehavior`: `Coal` or `Refund` for items without a crafting recipe (default: `Coal`)
+
+**Interface** (each player's own)
 - `ShowReelHUD`: Toggle on-screen slot reels display (default: `true`)
 - `EnableSlotAudio`: Play mechanical reel clinking sound effects (default: `true`)
+- `SlotDisplayDistance`: How close nearby players must be to see and hear a spin, in metres (default: `5.0`)
+- `ShowObliteratorContents`: Show the Obliterator's contents, with wins and losses, beneath the slot machine (default: `true`)
+- `ResultDisplayDuration`: Seconds the result stays on screen after a spin (default: `3.0`)
+
+---
+
+## Multiplayer
+
+Client and server must run the same version. The spin itself is worked out by whoever runs the Obliterator (usually the server), and each player's game tells it which biomes that player has discovered just before their spin, so the idol matches the player who pulled the lever.
 
 ---
 
@@ -57,4 +99,3 @@ The config file is created at `BepInEx/config/com.pics0ul.valheim.usefuloblitera
 
 - **Gale / Mod Manager**: Install via your mod manager.
 - **Manual**: Place `UsefulObliterator.dll` into your `Valheim/BepInEx/plugins/` directory.
-

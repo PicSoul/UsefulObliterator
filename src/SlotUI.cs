@@ -16,6 +16,8 @@ namespace UsefulObliterator
         private RectTransform _panelRect;
         private TMP_Text _topPayoutText;
         private TMP_Text _titleText;
+        private TMP_Text _subtitleText;
+        private TMP_Text _paytableHeaderText;
         private TMP_Text _statusText;
         private TMP_Text _summaryText;
         private GameObject _respinPromptBanner;
@@ -97,6 +99,58 @@ namespace UsefulObliterator
 
             InitAudio();
             BuildUIHierarchy();
+            ApplyLabels();
+
+            // Relabel straight away when the language is changed in the settings, rather than
+            // keeping the old one until the next world.
+            Localization.OnLanguageChange += ApplyLabels;
+        }
+
+        /// <summary>
+        /// Every fixed label on the cabinet, in the current language: the title, the subtitle,
+        /// the paytable heading and its rows. The percentages are numbers and need no words,
+        /// except the jackpot's "+LOOT".
+        /// </summary>
+        private void ApplyLabels()
+        {
+            if (_titleText != null)
+            {
+                _titleText.text = "<color=#d4af37>«</color> <color=#ffd700>◆</color> <color=#d4af37>»</color>   <color=#ffdf78><b>"
+                    + L("$uo_title") + "</b></color>   <color=#d4af37>«</color> <color=#ffd700>◆</color> <color=#d4af37>»</color>";
+            }
+
+            if (_subtitleText != null)
+            {
+                _subtitleText.text = "<color=#8fe4ff>~  " + L("$uo_subtitle") + "  ~</color>";
+            }
+
+            if (_paytableHeaderText != null)
+            {
+                _paytableHeaderText.text = "<color=#ffd700>« " + L("$uo_paytable") + " »</color>";
+            }
+
+            foreach (PaytableRow row in _paytableRows)
+            {
+                switch (row.Outcome)
+                {
+                    case OutcomeType.BossJackpot:
+                        row.LeftLabel.text = "<color=#ffd700><b>" + L("$uo_pay_boss") + "</b></color>";
+                        row.RightLabel.text = $"<color=#ffd700><b>{ModConfig.BossJackpotPayoutPercent.Value:0}%</b></color> <size=9><color=#ffe082>{L("$uo_pay_loot")}</color></size>";
+                        break;
+                    case OutcomeType.Quad:
+                        row.LeftLabel.text = "<color=#ffb74d><b>" + L("$uo_pay_four") + "</b></color>";
+                        break;
+                    case OutcomeType.Triple:
+                        row.LeftLabel.text = "<color=#81c784><b>" + L("$uo_pay_three") + "</b></color>";
+                        break;
+                    case OutcomeType.Pair:
+                        row.LeftLabel.text = "<color=#64b5f6><b>" + L("$uo_pay_two") + "</b></color>";
+                        break;
+                    default:
+                        row.LeftLabel.text = "<color=#e57373><b>" + L("$uo_pay_bust") + " ⚡</b></color>";
+                        break;
+                }
+            }
         }
 
         private void InitAudio()
@@ -236,7 +290,6 @@ namespace UsefulObliterator
 
             _titleText = titleObj.GetComponent<TMP_Text>();
             if (font != null) _titleText.font = font;
-            _titleText.text = "<color=#d4af37>«</color> <color=#ffd700>◆</color> <color=#d4af37>»</color>   <color=#ffdf78><b>THOR'S OBLITERATOR</b></color>   <color=#d4af37>«</color> <color=#ffd700>◆</color> <color=#d4af37>»</color>";
             _titleText.fontSize = 19f;
             _titleText.alignment = TextAlignmentOptions.Center;
             _titleText.color = new Color(1f, 0.88f, 0.50f);
@@ -261,8 +314,8 @@ namespace UsefulObliterator
             subRect.sizeDelta = Vector2.zero;
 
             TMP_Text subText = subObj.GetComponent<TMP_Text>();
+            _subtitleText = subText;
             if (font != null) subText.font = font;
-            subText.text = "<color=#8fe4ff>~  SLOTS & SALVAGE  ~</color>";
             subText.fontSize = 11f;
             subText.alignment = TextAlignmentOptions.Center;
             subText.color = new Color(0.55f, 0.85f, 0.95f, 0.90f);
@@ -291,7 +344,7 @@ namespace UsefulObliterator
 
             _statusText = statusObj.GetComponent<TMP_Text>();
             if (font != null) _statusText.font = font;
-            _statusText.text = "◆ ROLLING FOR SALVAGE... ◆";
+            _statusText.text = "◆ " + L("$uo_rolling") + " ◆";
             _statusText.fontSize = 18f;
             _statusText.alignment = TextAlignmentOptions.Center;
             _statusText.color = new Color(0.85f, 0.85f, 0.85f);
@@ -386,8 +439,8 @@ namespace UsefulObliterator
             pthRect.sizeDelta = new Vector2(0f, 22f);
 
             TMP_Text pthText = ptHeader.GetComponent<TMP_Text>();
+            _paytableHeaderText = pthText;
             if (font != null) pthText.font = font;
-            pthText.text = "<color=#ffd700>« PAYTABLE »</color>";
             pthText.fontSize = 13f;
             pthText.alignment = TextAlignmentOptions.Center;
 
@@ -408,31 +461,30 @@ namespace UsefulObliterator
 
             CreatePaytableRow(paytableObj.transform, font, startY + 0 * -rowHeight,
                 OutcomeType.BossJackpot,
-                "<color=#ffd700><b>4x BOSS</b></color>",
-                $"<color=#ffd700><b>{ModConfig.BossJackpotPayoutPercent.Value:0}%</b></color> <size=9><color=#ffe082>+LOOT</color></size>",
+                "", "",
                 new Color(0.08f, 0.06f, 0.03f, 0.85f));
 
             CreatePaytableRow(paytableObj.transform, font, startY + 1 * -rowHeight,
                 OutcomeType.Quad,
-                "<color=#ffb74d><b>4 MATCH</b></color>",
+                "",
                 $"<color=#ffb74d><b>{ModConfig.QuadPayoutPercent.Value:0}%</b></color>",
                 new Color(0.05f, 0.04f, 0.03f, 0.85f));
 
             CreatePaytableRow(paytableObj.transform, font, startY + 2 * -rowHeight,
                 OutcomeType.Triple,
-                "<color=#81c784><b>3 MATCH</b></color>",
+                "",
                 "<color=#81c784><b>100%</b></color>",
                 new Color(0.08f, 0.06f, 0.03f, 0.85f));
 
             CreatePaytableRow(paytableObj.transform, font, startY + 3 * -rowHeight,
                 OutcomeType.Pair,
-                "<color=#64b5f6><b>2 MATCH</b></color>",
+                "",
                 $"<color=#64b5f6><b>{ModConfig.PairPayoutPercent.Value:0}%</b></color>",
                 new Color(0.05f, 0.04f, 0.03f, 0.85f));
 
             CreatePaytableRow(paytableObj.transform, font, startY + 4 * -rowHeight,
                 OutcomeType.Bust,
-                "<color=#e57373><b>BUST ⚡</b></color>",
+                "",
                 $"<color=#e57373><b>{ModConfig.BustPayoutPercent.Value:0}%</b></color>",
                 new Color(0.08f, 0.06f, 0.03f, 0.85f));
         }
@@ -685,7 +737,7 @@ namespace UsefulObliterator
                 string keyName = Localization.instance != null ? Localization.instance.Localize("<color=yellow><b>$KEY_Use</b></color>") : "<color=yellow><b>E</b></color>";
                 if (_respinPromptText != null)
                 {
-                    _respinPromptText.text = $"Press {keyName} to spin again, or don't and take your loot and run.";
+                    _respinPromptText.text = Localization.instance.Localize("$uo_respin", keyName);
                 }
                 if (_respinPromptBanner != null)
                 {
@@ -728,7 +780,7 @@ namespace UsefulObliterator
 
         private IEnumerator SpinRoutine(RollOutcome outcome)
         {
-            _statusText.text = "◆ ROLLING FOR SALVAGE... ◆";
+            _statusText.text = "◆ " + L("$uo_rolling") + " ◆";
             _statusText.color = new Color(0.85f, 0.85f, 0.85f);
             _summaryText.text = "";
 
@@ -894,7 +946,7 @@ namespace UsefulObliterator
                 string keyName = Localization.instance != null ? Localization.instance.Localize("<color=yellow><b>$KEY_Use</b></color>") : "<color=yellow><b>E</b></color>";
                 if (_respinPromptText != null)
                 {
-                    _respinPromptText.text = $"Press {keyName} to spin again, or don't and take your loot and run.";
+                    _respinPromptText.text = Localization.instance.Localize("$uo_respin", keyName);
                 }
                 if (_respinPromptBanner != null)
                 {
@@ -1167,6 +1219,8 @@ namespace UsefulObliterator
 
         private void OnDestroy()
         {
+            Localization.OnLanguageChange -= ApplyLabels;
+
             if (_whitePixel != null)
             {
                 Destroy(_whitePixel);
@@ -1190,6 +1244,12 @@ namespace UsefulObliterator
         /// Awake until it is activated, so building it inactive puts the font in place before TMP
         /// ever goes looking for one.
         /// </remarks>
+        /// <summary>A key in this player's language.</summary>
+        private static string L(string key)
+        {
+            return Localization.instance != null ? Localization.instance.Localize(key) : key;
+        }
+
         internal static GameObject TextObject(string name, TMP_FontAsset font, params Type[] extra)
         {
             GameObject obj = new GameObject(name);

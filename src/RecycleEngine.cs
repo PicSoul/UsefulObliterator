@@ -96,7 +96,7 @@ namespace UsefulObliterator
                             else
                                 payoutItems[resPrefab] = refundAmount;
 
-                            string locName = Localization.instance.Localize(req.m_resItem.m_itemData.m_shared.m_name);
+                            string locName = req.m_resItem.m_itemData.m_shared.m_name; // the key, translated by each player
                             if (result.ItemsSalvaged.ContainsKey(locName))
                                 result.ItemsSalvaged[locName] += refundAmount;
                             else
@@ -177,7 +177,7 @@ namespace UsefulObliterator
                             else
                                 payoutItems[matPrefab] = refundAmount;
 
-                            string locName = Localization.instance.Localize(item.m_shared.m_name);
+                            string locName = item.m_shared.m_name; // the key, translated by each player
                             if (result.ItemsSalvaged.ContainsKey(locName))
                                 result.ItemsSalvaged[locName] += refundAmount;
                             else
@@ -199,7 +199,7 @@ namespace UsefulObliterator
                                 else
                                     payoutItems[item.m_dropPrefab] = refund;
 
-                                string locName = Localization.instance.Localize(item.m_shared.m_name);
+                                string locName = item.m_shared.m_name; // the key, translated by each player
                                 if (result.ItemsSalvaged.ContainsKey(locName))
                                     result.ItemsSalvaged[locName] += refund;
                                 else
@@ -272,7 +272,7 @@ namespace UsefulObliterator
                 if (idol != null)
                 {
                     payoutItems[idol] = (payoutItems.TryGetValue(idol, out int had) ? had : 0) + 1;
-                    string locName = Localization.instance.Localize(idol.GetComponent<ItemDrop>().m_itemData.m_shared.m_name);
+                    string locName = idol.GetComponent<ItemDrop>().m_itemData.m_shared.m_name; // the key, translated by each player
                     result.ItemsSalvaged[locName] = (result.ItemsSalvaged.ContainsKey(locName) ? result.ItemsSalvaged[locName] : 0) + 1;
                     UsefulObliteratorPlugin.Log.LogInfo($"[RecycleEngine] Boss Jackpot idol: {idol.name}");
                 }
@@ -318,7 +318,8 @@ namespace UsefulObliterator
                 UsefulObliteratorPlugin.Log.LogWarning($"[RecycleEngine] Failed to save container ZDO: {ex.Message}");
             }
 
-            // Build summary text
+            // Build summary text - in keys, not words. The spin often runs on the server, so this
+            // is translated by each player's own game when it arrives, into their language.
             List<string> parts = new List<string>();
             foreach (KeyValuePair<string, int> kvp in result.ItemsSalvaged)
             {
@@ -326,10 +327,10 @@ namespace UsefulObliterator
             }
             if (result.CoalGranted > 0)
             {
-                parts.Add($"+{result.CoalGranted} Coal");
+                parts.Add($"+{result.CoalGranted} $item_coal");
             }
 
-            result.SummaryText = parts.Count > 0 ? "Payout: " + string.Join(", ", parts) : "Obliterated into dust.";
+            result.SummaryText = parts.Count > 0 ? "$uo_payout " + string.Join(", ", parts) : "$uo_dust";
             return result;
         }
 
@@ -345,7 +346,7 @@ namespace UsefulObliterator
                 else
                     payoutItems[coinsPrefab] = coinBonus;
 
-                string locName = Localization.instance.Localize(coinsPrefab.GetComponent<ItemDrop>().m_itemData.m_shared.m_name);
+                string locName = coinsPrefab.GetComponent<ItemDrop>().m_itemData.m_shared.m_name; // the key, translated by each player
                 result.ItemsSalvaged[locName] = (result.ItemsSalvaged.ContainsKey(locName) ? result.ItemsSalvaged[locName] : 0) + coinBonus;
             }
 
@@ -371,7 +372,7 @@ namespace UsefulObliterator
                     else
                         payoutItems[gemPrefab] = gemCount;
 
-                    string locName = Localization.instance.Localize(gemPrefab.GetComponent<ItemDrop>().m_itemData.m_shared.m_name);
+                    string locName = gemPrefab.GetComponent<ItemDrop>().m_itemData.m_shared.m_name; // the key, translated by each player
                     result.ItemsSalvaged[locName] = (result.ItemsSalvaged.ContainsKey(locName) ? result.ItemsSalvaged[locName] : 0) + gemCount;
                 }
             }

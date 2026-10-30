@@ -87,7 +87,7 @@ if (Test-Path $stage) { Remove-Item $stage -Recurse -Force }
 New-Item -ItemType Directory -Path $stage | Out-Null
 
 Copy-Item $dll $stage
-foreach ($f in @("manifest.json", "icon.png", "README.md", "CHANGELOG.md", "LICENSE")) {
+foreach ($f in @("manifest.json", "icon.png", "README.md", "CHANGELOG.md", "LICENSE", "THIRD-PARTY-NOTICES.md")) {
     if (Test-Path "$root\$f") { Copy-Item "$root\$f" $stage }
 }
 if (Test-Path "$root\icons") {

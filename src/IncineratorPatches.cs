@@ -65,8 +65,8 @@ namespace UsefulObliterator
             }
 
             string useKey = Localization.instance.Localize("<color=yellow><b>$KEY_Use</b></color>");
-            string mode = ModConfig.OnlyAllowCraftedItems.Value ? "(Recycle Crafted Items)" : "(Slots & Salvage)";
-            __result = Localization.instance.Localize($"[{useKey}] Pull lever <color=#66e0ff>{mode}</color>");
+            string mode = ModConfig.OnlyAllowCraftedItems.Value ? "$uo_mode_crafted" : "$uo_mode_slots";
+            __result = Localization.instance.Localize($"[{useKey}] $uo_lever_pull <color=#66e0ff>({mode})</color>");
         }
 
         [HarmonyPatch(typeof(Incinerator), "OnIncinerate")]
@@ -104,7 +104,7 @@ namespace UsefulObliterator
 
                 if (craftedCount == 0)
                 {
-                    user?.Message(MessageHud.MessageType.Center, "Thor requires at least one crafted item to spin! Cannot spin materials only.");
+                    user?.Message(MessageHud.MessageType.Center, "$uo_need_crafted");
                     return false;
                 }
             }
@@ -164,7 +164,8 @@ namespace UsefulObliterator
 
                 if (craftedCount == 0)
                 {
-                    string rejectMsg = "Thor requires at least one crafted item to spin! Cannot spin materials only.";
+                    // Sent as a key: the player's own game puts it in their language.
+                    string rejectMsg = "$uo_need_crafted";
                     UsefulObliteratorPlugin.Log.LogInfo("[UsefulObliterator] Blocked lever pull: container contains no crafted items.");
                     nview.InvokeRPC(uid, "RPC_UsefulObliterator_Summary", rejectMsg);
                     nview.InvokeRPC(uid, "RPC_IncinerateRespons", (int)Incinerator.Response.Fail);
@@ -522,7 +523,9 @@ namespace UsefulObliterator
                 Reel4 = s4,
                 Outcome = outcomeType,
                 PayoutRatio = payout,
-                Title = !string.IsNullOrEmpty(title) ? title : outcomeType.ToString(),
+                // Built here rather than taken from the packet, so it is in this player's language
+                // and names the creature as their game does.
+                Title = SlotEngine.TitleFor(outcomeType, !string.IsNullOrEmpty(matchedPrefab) ? SlotEngine.FindSymbol(matchedPrefab) : null),
                 TitleColor = titleColor,
                 MatchedSymbol = !string.IsNullOrEmpty(matchedPrefab) ? SlotEngine.FindSymbol(matchedPrefab) : null
             };
@@ -538,10 +541,11 @@ namespace UsefulObliterator
         {
             if (Player.m_localPlayer == null || string.IsNullOrEmpty(summary)) return;
 
-            // Display large yellow payout banner directly above the spin graphic via SlotUI
+            // Whoever ran the spin - often the server - sent keys, not words: "$uo_payout 3x
+            // $item_wood". Translated here, in this player's language.
             if (SlotUI.Instance != null)
             {
-                SlotUI.Instance.UpdateSummary(summary);
+                SlotUI.Instance.UpdateSummary(Localization.instance.Localize(summary));
             }
         }
     }

@@ -2,6 +2,25 @@
 
 All notable changes to **Useful Obliterator** will be documented in this file.
 
+## 0.2.1
+
+- **Translations.** Every word the mod shows - the lever, the slot machine, the result banners, the
+  payout summary and its messages - now comes from a translation file, through
+  [LocalizationManager](https://github.com/blaxxun-boop/LocalizationManager). The mod follows the
+  language set in the game and ships with every language the game offers, the community translations
+  included, except Abenaki: 35 in all. Translations other than English are machine-made; corrections
+  from native speakers are welcome. Anyone can add a language, or correct one, by dropping a
+  `Useful Obliterator.<Language>.yml` file into the BepInEx folder - see the README. Thanks to the
+  player who asked for this.
+- The payout summary and result banner are now put into words on each player's own screen. The spin
+  runs wherever the Obliterator does, often the server, so text made there would have arrived in the
+  server's language; it now arrives as keys, and item and creature names come out as each player's
+  game names them.
+- Changing the language in the settings changes the mod's words straight away, the slot machine's
+  labels included, and the creature named in the result banner follows it too.
+- The pair banner now reads "PAIR! 2x BOAR!", matching the other results, instead of "PAIR OF BOARS!",
+  whose English plural could not be carried into other languages.
+
 ## 0.2.0
 
 - A Boss Jackpot now also brings an idol for the Forge of Potential. It is picked at random from

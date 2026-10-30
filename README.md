@@ -95,6 +95,37 @@ Client and server must run the same version. The spin itself is worked out by wh
 
 ---
 
+## Translations
+
+Useful Obliterator follows the language set in the game, and changes the moment you change it. It
+ships with every language the game offers, the community translations included:
+
+English, Swedish, French, Italian, German, Spanish, Russian, Romanian, Bulgarian, Macedonian, Finnish,
+Danish, Norwegian, Icelandic, Turkish, Lithuanian, Czech, Hungarian, Slovak, Polish, Dutch, European
+and Brazilian Portuguese, Simplified and Traditional Chinese, Japanese, Korean, Hindi, Thai, Croatian,
+Georgian, Greek, Serbian, Ukrainian and Latvian.
+
+The translations other than English are machine-made, so corrections from native speakers are very
+welcome. Abenaki, which the game also offers, is left in English rather than guessed at - a speaker's
+translation would be gladly included.
+
+To add a language or correct one, no rebuild is needed:
+
+1. Copy the [English file](https://github.com/PicSoul/UsefulObliterator/blob/main/translations/English.yml).
+2. Name it `Useful Obliterator.<Language>.yml`, using the game's name for the language - for example
+   `Useful Obliterator.Italian.yml` or `Useful Obliterator.Japanese.yml`.
+3. Translate the text on the right of each line, leaving the key on the left alone and keeping `$1`
+   where the mod fills in a value.
+4. Put it anywhere inside the `BepInEx` folder. A file there wins over the built-in translation, so it
+   also works for fixing one.
+
+Send it over as an issue or pull request on GitHub and it will ship with the next version.
+
+Translations are handled by [LocalizationManager](https://github.com/blaxxun-boop/LocalizationManager)
+by blaxxun (MIT licence), the same system many Valheim mods use.
+
+---
+
 ## Installation
 
 - **Gale / Mod Manager**: Install via your mod manager.

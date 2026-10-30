@@ -168,7 +168,9 @@ namespace UsefulObliterator
                 slot.Root.SetActive(true);
             }
 
-            _more.text = order.Count > MaxCells ? $"+{order.Count - MaxCells} more" : "";
+            _more.text = order.Count > MaxCells
+                ? Localization.instance.Localize("$uo_more", (order.Count - MaxCells).ToString())
+                : "";
             _root.gameObject.SetActive(true);
         }
 

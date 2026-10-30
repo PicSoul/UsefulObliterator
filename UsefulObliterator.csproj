@@ -10,7 +10,7 @@
     <TargetFramework>netstandard2.1</TargetFramework>
     <AssemblyName>UsefulObliterator</AssemblyName>
     <RootNamespace>UsefulObliterator</RootNamespace>
-    <Version>0.2.0</Version>
+    <Version>0.2.1</Version>
     <LangVersion>latest</LangVersion>
     <Nullable>disable</Nullable>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
@@ -21,6 +21,8 @@
     <DebugType>none</DebugType>
     <NoWarn>$(NoWarn);MSB3277;CS8632</NoWarn>
     <DefaultItemExcludes>$(DefaultItemExcludes);scratch\**</DefaultItemExcludes>
+    <!-- Puts YamlDotNet.dll beside the build, where ILRepack picks it up to fold it in. -->
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -38,6 +40,19 @@
     <Error Condition="!Exists('$(BepInExCore)\BepInEx.dll')"
            Text="BepInEx assemblies not found at '$(BepInExCore)'. Copy Local.props.example to Local.props and set &lt;BepInExCore&gt; to your BepInEx\core folder." />
   </Target>
+
+  <!-- Translations, built into the DLL. LocalizationManager finds them by the end of the
+       resource name: translations.<Language>.yml. -->
+  <ItemGroup>
+    <EmbeddedResource Include="translations\*.yml" />
+  </ItemGroup>
+
+  <!-- YamlDotNet reads the translation files. ILRepack folds it into UsefulObliterator.dll,
+       renamed internal, so players install nothing extra and no other mod's copy clashes. -->
+  <ItemGroup>
+    <PackageReference Include="YamlDotNet" Version="16.3.0" />
+    <PackageReference Include="ILRepack.Lib.MSBuild.Task" Version="2.0.43" PrivateAssets="all" />
+  </ItemGroup>
 
   <ItemGroup>
     <Reference Include="assembly_valheim">

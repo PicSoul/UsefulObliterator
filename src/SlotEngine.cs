@@ -29,7 +29,7 @@ namespace UsefulObliterator
         public int Weight { get; }
 
         private Sprite _cachedSprite;
-        private string _cachedLocalizedName;
+        private string _nameKey;
 
         public TrophySymbol(string prefabName, string fallbackName, TrophyTier tier, int weight)
         {
@@ -142,24 +142,26 @@ namespace UsefulObliterator
             return _cachedSprite;
         }
 
+        /// <summary>
+        /// The trophy's name in the current language. The game's key is remembered, never the
+        /// words: remembering the words kept whatever language was set the first time, so a switch
+        /// in the settings left the banner naming the creature in the old one.
+        /// </summary>
         public string GetDisplayName()
         {
-            if (!string.IsNullOrEmpty(_cachedLocalizedName)) return _cachedLocalizedName;
-
-            if (ObjectDB.instance != null && Localization.instance != null)
+            if (_nameKey == null && ObjectDB.instance != null)
             {
                 GameObject itemPrefab = ObjectDB.instance.GetItemPrefab(PrefabName);
-                if (itemPrefab != null)
+                ItemDrop drop = itemPrefab != null ? itemPrefab.GetComponent<ItemDrop>() : null;
+                if (drop != null && !string.IsNullOrEmpty(drop.m_itemData?.m_shared?.m_name))
                 {
-                    ItemDrop drop = itemPrefab.GetComponent<ItemDrop>();
-                    if (drop != null && !string.IsNullOrEmpty(drop.m_itemData?.m_shared?.m_name))
-                    {
-                        _cachedLocalizedName = Localization.instance.Localize(drop.m_itemData.m_shared.m_name);
-                        return _cachedLocalizedName;
-                    }
+                    _nameKey = drop.m_itemData.m_shared.m_name;
                 }
             }
-            return FallbackName;
+
+            return _nameKey != null && Localization.instance != null
+                ? Localization.instance.Localize(_nameKey)
+                : FallbackName;
         }
     }
 
@@ -178,6 +180,25 @@ namespace UsefulObliterator
 
     public static class SlotEngine
     {
+
+        /// <summary>
+        /// The banner over a finished spin, in this player's language. Built on each player's
+        /// screen rather than sent, so the words and the creature's name are their own.
+        /// </summary>
+        public static string TitleFor(OutcomeType outcome, TrophySymbol symbol)
+        {
+            Localization loc = Localization.instance;
+            string creature = symbol != null ? symbol.GetDisplayName().ToUpper() : "";
+            switch (outcome)
+            {
+                case OutcomeType.BossJackpot: return loc.Localize("$uo_result_jackpot", creature);
+                case OutcomeType.Quad: return loc.Localize("$uo_result_four", creature);
+                case OutcomeType.Triple: return loc.Localize("$uo_result_three", creature);
+                case OutcomeType.Pair: return loc.Localize("$uo_result_two", creature);
+                default: return "<b>" + loc.Localize("$uo_result_bust") + "</b>";
+            }
+        }
+
         public static readonly List<TrophySymbol> Symbols = new List<TrophySymbol>();
         private static readonly List<TrophySymbol> _activeSymbols = new List<TrophySymbol>();
         private static int _totalWeight;
@@ -325,14 +346,14 @@ namespace UsefulObliterator
                 {
                     result.Outcome = OutcomeType.BossJackpot;
                     result.PayoutRatio = Mathf.Max(0f, ModConfig.BossJackpotPayoutPercent.Value / 100f);
-                    result.Title = $"THOR'S GRAND JACKPOT! 4x {bestSym.GetDisplayName().ToUpper()}!";
+                    result.Title = TitleFor(result.Outcome, bestSym);
                     result.TitleColor = new Color(1f, 0.85f, 0.2f); // Brilliant Gold
                 }
                 else
                 {
                     result.Outcome = OutcomeType.Quad;
                     result.PayoutRatio = Mathf.Max(0f, ModConfig.QuadPayoutPercent.Value / 100f);
-                    result.Title = $"4 OF A KIND! 4x {bestSym.GetDisplayName().ToUpper()}!";
+                    result.Title = TitleFor(result.Outcome, bestSym);
                     result.TitleColor = new Color(0.25f, 1f, 0.9f); // Electric Turquoise
                 }
             }
@@ -340,21 +361,21 @@ namespace UsefulObliterator
             {
                 result.Outcome = OutcomeType.Triple;
                 result.PayoutRatio = Mathf.Max(0f, ModConfig.TriplePayoutPercent.Value / 100f);
-                result.Title = $"TRIPLE MATCH! 3x {bestSym.GetDisplayName().ToUpper()}!";
+                result.Title = TitleFor(result.Outcome, bestSym);
                 result.TitleColor = new Color(0.3f, 0.9f, 1f); // Sky Cyan
             }
             else if (maxCount == 2)
             {
                 result.Outcome = OutcomeType.Pair;
                 result.PayoutRatio = Mathf.Max(0f, ModConfig.PairPayoutPercent.Value / 100f);
-                result.Title = $"PAIR OF {bestSym.GetDisplayName().ToUpper()}S!";
+                result.Title = TitleFor(result.Outcome, bestSym);
                 result.TitleColor = new Color(1f, 0.95f, 0.4f); // Warm Yellow
             }
             else
             {
                 result.Outcome = OutcomeType.Bust;
                 result.PayoutRatio = Mathf.Max(0f, ModConfig.BustPayoutPercent.Value / 100f);
-                result.Title = "<b>NO MATCH! BUST</b>";
+                result.Title = TitleFor(result.Outcome, bestSym);
                 result.TitleColor = new Color(1f, 0.22f, 0.22f); // High-contrast Vivid Red
             }
 

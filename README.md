@@ -1,6 +1,6 @@
 # Useful Obliterator
 
-**Turn the Valheim Obliterator into an authentic Norse slot machine with recipe-aware recycling payouts.**
+**Turn the Valheim Obliterator into a Norse slot machine with recipe-aware recycling payouts.**
 
 In vanilla Valheim, the Obliterator turns everything into Coal. Other recycling mods often reduce the game to an instant, sterile button click. **Useful Obliterator** makes recycling an exciting gamble: drop your obsolete armor, weapons, or spare gear into the Obliterator, pull the lever, and watch four creature-head reels spin during Thor's lightning wind-up!
 
